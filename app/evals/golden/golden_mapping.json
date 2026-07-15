@@ -1,0 +1,333 @@
+{
+  "mapping_version": "1.0",
+  "source": "legacy_hrm (MySQL)",
+  "destination": "people_platform (MongoDB)",
+  "generated_at": "2026-07-15T13:51:59Z",
+  "tables": [
+    {
+      "source_table": "emp_master",
+      "destination_collection": "employees",
+      "confidence": 0.98,
+      "reasoning": "The emp_master table contains comprehensive employee core data (identity, employment dates, compensation, contact info, organizational relationships) that maps directly to the employees collection structure, while departments is for organizational units only.",
+      "field_mappings": [
+        {
+          "source_field": "emp_id",
+          "destination_field": "_id",
+          "type_transform": "INT -> ObjectId",
+          "confidence": 0.93,
+          "reasoning": "'emp_id' is the primary key of emp_master, and every MongoDB document requires a single unique '_id' -- this is a structural mapping rather than a lexical one.",
+          "notes": "Requires an ID-generation/lookup strategy; retain the original integer ID as a legacy field for traceability during migration."
+        },
+        {
+          "source_field": "emp_cd",
+          "destination_field": "employeeCode",
+          "type_transform": "VARCHAR(20) -> String",
+          "confidence": 0.95,
+          "reasoning": "employeeCode is a direct semantic match for a human-readable employee code with unique constraint, confirmed by high lexical similarity and matching data type and uniqueness requirements.",
+          "notes": null
+        },
+        {
+          "source_field": "f_name",
+          "destination_field": "fullName.firstName",
+          "type_transform": "VARCHAR(50) -> String",
+          "confidence": 0.95,
+          "reasoning": "The source field f_name (first name) is a direct semantic match to fullName.firstName, which stores the first name component of an employee's full name.",
+          "notes": null
+        },
+        {
+          "source_field": "l_name",
+          "destination_field": "fullName.lastName",
+          "type_transform": "VARCHAR(50) -> String",
+          "confidence": 0.95,
+          "reasoning": "The source field l_name (last name) from emp_master maps directly to fullName.lastName based on semantic meaning and field naming convention, despite moderate lexical similarity.",
+          "notes": null
+        },
+        {
+          "source_field": "hire_dt",
+          "destination_field": "employment.startDate",
+          "type_transform": "DATETIME -> ISODate",
+          "confidence": 0.95,
+          "reasoning": "hire_dt represents the date an employee was hired, which semantically and temporally maps directly to employment.startDate as the employment commencement date.",
+          "notes": null
+        },
+        {
+          "source_field": "term_dt",
+          "destination_field": "employment.endDate",
+          "type_transform": "DATETIME -> ISODate",
+          "confidence": 0.92,
+          "reasoning": "term_dt stores the termination date (null if still active), which directly maps to endDate representing when employment ended, with the same null semantics for active employees.",
+          "notes": null
+        },
+        {
+          "source_field": "dept_id",
+          "destination_field": "department.departmentId",
+          "type_transform": "INT -> ObjectId (reference)",
+          "confidence": 0.92,
+          "reasoning": "The source dept_id is a foreign key integer referencing dept_info, and department.departmentId is an ObjectId reference to the departments collection, making them semantically equivalent identifier fields despite different data types.",
+          "notes": "Foreign key resolved to the corresponding document's ObjectId via a lookup table built during migration. The department.code and department.name sibling fields are populated by joining dept_info on this id, not from emp_master directly."
+        },
+        {
+          "source_field": "mgr_emp_id",
+          "destination_field": "employment.managerId",
+          "type_transform": "INT -> ObjectId (reference)",
+          "confidence": 0.92,
+          "reasoning": "The source field mgr_emp_id is a foreign key referencing the employee master table to identify a manager, which semantically matches employment.managerId as an ObjectId reference to another employee document.",
+          "notes": "Foreign key resolved to the corresponding document's ObjectId via a lookup table built during migration."
+        },
+        {
+          "source_field": "job_lvl_cd",
+          "destination_field": "employment.jobLevel",
+          "type_transform": "VARCHAR(10) -> String",
+          "confidence": 0.92,
+          "reasoning": "The source field contains job level codes (L1, L2, IC3, M1) that directly match the format and purpose of the employment.jobLevel destination field, which explicitly stores the same code patterns.",
+          "notes": null
+        },
+        {
+          "source_field": "base_sal",
+          "destination_field": "compensation.baseSalary",
+          "type_transform": "DECIMAL(12,2) -> Number",
+          "confidence": 0.92,
+          "reasoning": "The source field base_sal is a decimal salary amount that semantically and structurally matches compensation.baseSalary, which is a numeric field designed to store base salary values.",
+          "notes": "Watch for float precision loss; consider Decimal128 if exact precision must be preserved."
+        },
+        {
+          "source_field": "sal_currency",
+          "destination_field": "compensation.currency",
+          "type_transform": "CHAR(3) -> String",
+          "confidence": 0.95,
+          "reasoning": "The source field stores ISO 4217 currency codes and the destination field is explicitly designed for ISO 4217 currency values, making this a direct semantic match.",
+          "notes": "ISO 4217 currency code preserved as-is."
+        },
+        {
+          "source_field": "work_email",
+          "destination_field": "contact.email",
+          "type_transform": "VARCHAR(120) -> String",
+          "confidence": 0.92,
+          "reasoning": "work_email is a professional email address and maps semantically to contact.email despite moderate lexical similarity; the UNIQUE constraint aligns with typical email field requirements in contact information.",
+          "notes": null
+        },
+        {
+          "source_field": "work_phone",
+          "destination_field": "contact.phone",
+          "type_transform": "VARCHAR(20) -> String",
+          "confidence": 0.92,
+          "reasoning": "work_phone is a telephone number field that semantically maps to contact.phone, which is the standard location for phone contact information in the destination schema.",
+          "notes": null
+        },
+        {
+          "source_field": "office_loc_id",
+          "destination_field": "location.locationId",
+          "type_transform": "INT -> ObjectId (reference)",
+          "confidence": 0.92,
+          "reasoning": "The source field office_loc_id is a foreign key to locations table, and location.locationId is the only candidate that references a locations collection with matching semantic meaning and foreign key relationship.",
+          "notes": "Foreign key resolved to the corresponding document's ObjectId via a lookup table built during migration. The location.code/name/city/country/timezone sibling fields are populated by joining locations on this id, not from emp_master directly."
+        },
+        {
+          "source_field": "is_remote",
+          "destination_field": "employment.isRemote",
+          "type_transform": "TINYINT(1) -> Boolean",
+          "confidence": 0.95,
+          "reasoning": "The source TINYINT(1) boolean flag for remote work status maps directly to the Boolean field employment.isRemote, which has matching semantic meaning and appropriate data type.",
+          "notes": null
+        },
+        {
+          "source_field": "rec_stat",
+          "destination_field": "employment.status",
+          "type_transform": "CHAR(1) code -> String enum",
+          "confidence": 0.92,
+          "reasoning": "The source field rec_stat encodes employment status (Active/Inactive/Terminated) which maps directly to employment.status, despite the format difference (single character codes to full strings).",
+          "notes": "Transform: A -> active, I -> inactive, T -> terminated"
+        },
+        {
+          "source_field": "created_ts",
+          "destination_field": "meta.createdAt",
+          "type_transform": "DATETIME -> ISODate",
+          "confidence": 0.95,
+          "reasoning": "The source field records when an employee record was created in the legacy system, which semantically and functionally matches a metadata creation timestamp field in the destination schema.",
+          "notes": null
+        },
+        {
+          "source_field": "updated_ts",
+          "destination_field": "meta.updatedAt",
+          "type_transform": "DATETIME -> ISODate",
+          "confidence": 0.95,
+          "reasoning": "The source field tracks the last update timestamp, which semantically and functionally matches meta.updatedAt as a record modification timestamp in the destination schema.",
+          "notes": null
+        }
+      ],
+      "unmapped_source_fields": [
+        "dob"
+      ],
+      "unmapped_destination_fields": [
+        {
+          "destination_field": "department.code",
+          "reason": "Populated by joining emp_master.dept_id -> dept_info.dept_cd during migration (not a direct emp_master field)."
+        },
+        {
+          "destination_field": "department.name",
+          "reason": "Populated by joining emp_master.dept_id -> dept_info.dept_nm during migration (not a direct emp_master field)."
+        },
+        {
+          "destination_field": "location.code",
+          "reason": "Populated by joining emp_master.office_loc_id -> locations.loc_cd during migration (not a direct emp_master field)."
+        },
+        {
+          "destination_field": "location.name",
+          "reason": "Populated by joining emp_master.office_loc_id -> locations.loc_nm during migration (not a direct emp_master field)."
+        },
+        {
+          "destination_field": "location.city",
+          "reason": "Populated by joining emp_master.office_loc_id -> locations.city during migration (not a direct emp_master field)."
+        },
+        {
+          "destination_field": "location.country",
+          "reason": "Populated by joining emp_master.office_loc_id -> locations.country_cd during migration (not a direct emp_master field)."
+        },
+        {
+          "destination_field": "location.timezone",
+          "reason": "Populated by joining emp_master.office_loc_id -> locations.tz_cd during migration (not a direct emp_master field)."
+        }
+      ]
+    },
+    {
+      "source_table": "dept_info",
+      "destination_collection": "departments",
+      "confidence": 0.98,
+      "reasoning": "The source table dept_info contains department master data with hierarchical structure, cost center codes, and department head references, which directly maps to the departments collection structure including parentDepartmentId, headEmployeeId, costCenterCode, and isActive fields.",
+      "field_mappings": [
+        {
+          "source_field": "dept_id",
+          "destination_field": "_id",
+          "type_transform": "INT -> ObjectId",
+          "confidence": 0.93,
+          "reasoning": "'dept_id' is the primary key of dept_info, and every MongoDB document requires a single unique '_id' -- this is a structural mapping rather than a lexical one.",
+          "notes": "Requires an ID-generation/lookup strategy; retain the original integer ID as a legacy field for traceability during migration."
+        },
+        {
+          "source_field": "dept_nm",
+          "destination_field": "name",
+          "type_transform": "VARCHAR(100) -> String",
+          "confidence": 0.92,
+          "reasoning": "dept_nm is a department name field that maps directly to the 'name' field in the departments collection, despite moderate lexical similarity due to abbreviation in the source.",
+          "notes": null
+        },
+        {
+          "source_field": "parent_dept_id",
+          "destination_field": "parentDepartmentId",
+          "type_transform": "INT -> ObjectId (reference)",
+          "confidence": 0.95,
+          "reasoning": "The source field is a self-referencing foreign key to the department hierarchy, which directly maps to the parentDepartmentId field that maintains the same parent-child department relationship in MongoDB.",
+          "notes": "Foreign key resolved to the corresponding document's ObjectId via a lookup table built during migration."
+        },
+        {
+          "source_field": "dept_head_id",
+          "destination_field": "headEmployeeId",
+          "type_transform": "INT -> ObjectId (reference)",
+          "confidence": 0.92,
+          "reasoning": "dept_head_id is a foreign key to an employee ID that identifies the department head, which semantically and structurally matches headEmployeeId as an ObjectId reference to the employees collection.",
+          "notes": "Foreign key resolved to the corresponding document's ObjectId via a lookup table built during migration."
+        },
+        {
+          "source_field": "cost_ctr_cd",
+          "destination_field": "costCenterCode",
+          "type_transform": "VARCHAR(20) -> String",
+          "confidence": 0.95,
+          "reasoning": "The source field cost_ctr_cd is a finance cost center code that maps directly to the costCenterCode destination field, which has high lexical similarity and matching semantic meaning.",
+          "notes": null
+        },
+        {
+          "source_field": "dept_stat",
+          "destination_field": "isActive",
+          "type_transform": "CHAR(1) code -> Boolean",
+          "confidence": 0.92,
+          "reasoning": "The source field dept_stat encodes active/inactive status as single characters (A/I), which maps directly to the boolean isActive field representing department operational status.",
+          "notes": "Transform: A -> true, I -> false"
+        },
+        {
+          "source_field": "dept_cd",
+          "destination_field": "code",
+          "type_transform": "VARCHAR(20) -> String",
+          "confidence": 0.72,
+          "reasoning": "The source field dept_cd is a department code identifier that should map to the generic 'code' field, which is the most semantically appropriate match for storing a department code value despite lower lexical similarity.",
+          "notes": null
+        }
+      ],
+      "unmapped_source_fields": [],
+      "unmapped_destination_fields": []
+    },
+    {
+      "source_table": "locations",
+      "destination_collection": "locations",
+      "confidence": 0.99,
+      "reasoning": "The source table 'locations' maps directly to the destination 'locations' collection with matching fields for location code, name, city, state/province, country code, postal code, and timezone.",
+      "field_mappings": [
+        {
+          "source_field": "loc_id",
+          "destination_field": "_id",
+          "type_transform": "INT -> ObjectId",
+          "confidence": 0.93,
+          "reasoning": "'loc_id' is the primary key of locations, and every MongoDB document requires a single unique '_id' -- this is a structural mapping rather than a lexical one.",
+          "notes": "Requires an ID-generation/lookup strategy; retain the original integer ID as a legacy field for traceability during migration."
+        },
+        {
+          "source_field": "loc_cd",
+          "destination_field": "code",
+          "type_transform": "VARCHAR(20) -> String",
+          "confidence": 0.85,
+          "reasoning": "loc_cd is a location code field with UNIQUE constraint, and 'code' is the most semantically appropriate match as a general code field for locations, despite moderate lexical similarity.",
+          "notes": null
+        },
+        {
+          "source_field": "loc_nm",
+          "destination_field": "name",
+          "type_transform": "VARCHAR(100) -> String",
+          "confidence": 0.92,
+          "reasoning": "loc_nm is a location name field that maps most naturally to the 'name' field in the destination locations collection, as it stores the textual identifier for a location.",
+          "notes": null
+        },
+        {
+          "source_field": "city",
+          "destination_field": "city",
+          "type_transform": "VARCHAR(80) -> String",
+          "confidence": 0.95,
+          "reasoning": "The source field 'city' from the locations table maps directly to the 'city' field in the destination locations collection with identical semantics and purpose.",
+          "notes": null
+        },
+        {
+          "source_field": "state_prov",
+          "destination_field": "stateOrProvince",
+          "type_transform": "VARCHAR(80) -> String",
+          "confidence": 0.95,
+          "reasoning": "The source field state_prov is a direct semantic match for stateOrProvince, storing the same administrative subdivision data with high lexical similarity.",
+          "notes": null
+        },
+        {
+          "source_field": "country_cd",
+          "destination_field": "country",
+          "type_transform": "CHAR(2) -> String",
+          "confidence": 0.95,
+          "reasoning": "The destination field 'country' explicitly stores ISO 3166-1 alpha-2 codes matching the source field's type and format, with high lexical similarity and semantic alignment.",
+          "notes": "ISO 3166-1 alpha-2 country code preserved as-is."
+        },
+        {
+          "source_field": "postal_cd",
+          "destination_field": "postalCode",
+          "type_transform": "VARCHAR(20) -> String",
+          "confidence": 0.95,
+          "reasoning": "postal_cd is a postal code field and postalCode is the semantically equivalent destination field with high lexical similarity and matching data type.",
+          "notes": null
+        },
+        {
+          "source_field": "tz_cd",
+          "destination_field": "timezone",
+          "type_transform": "VARCHAR(50) -> String",
+          "confidence": 0.95,
+          "reasoning": "The source field tz_cd contains IANA timezone codes and maps directly to the timezone field which is designed to store timezone information.",
+          "notes": null
+        }
+      ],
+      "unmapped_source_fields": [],
+      "unmapped_destination_fields": []
+    }
+  ]
+}

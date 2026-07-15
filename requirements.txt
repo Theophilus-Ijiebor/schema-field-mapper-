@@ -1,0 +1,14 @@
+numpy
+scikit-learn
+jsonschema
+anthropic
+openai
+pydantic>=2
+langgraph
+langgraph-checkpoint-sqlite
+langchain-core
+langsmith
+fastapi
+uvicorn
+python-dotenv
+deepeval
